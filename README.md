@@ -17,17 +17,17 @@ and contain about <b>1,5 million games</b>.
 Well, that's a lot. Not all of them are useful though. What do I mean by that?
 In chess database we can find:
 * games played by lower rated players:
- * they aren't useful for learning openings,
- * they aren't useful for learning plans for middlegame,
- * they aren't useful for endgames either,
+   * they aren't useful for learning openings,
+   * they aren't useful for learning plans for middlegame,
+   * they aren't useful for endgames either,
 * games that have low number of moves:
- * a lot of games end after few moves after a predetermined draw,
- * even more games doesn't even have any moves,
+   * a lot of games end after few moves after a predetermined draw,
+   * even more games doesn't even have any moves,
 * games from different game modes (mostly chess960):
- * they mess up statistics, create problems for chess base reader programs and <i>(most importantly)</i> 
+   * they mess up statistics, create problems for chess base reader programs and <i>(most importantly)</i> 
    they are not chess games!
 * games without the result:
- * for unknown reason, sometimes someone doesn't put result, and that is bad for statistics too.
+   * for unknown reason, sometimes someone doesn't put result, and that is bad for statistics too.
 
 The purpose of the project is to get clean, useful chess database from which you can work on chess.
 Program allows you to filter games to get only ones that can be useful for studying.
