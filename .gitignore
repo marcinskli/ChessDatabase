@@ -1,0 +1,14 @@
+# PyCharm
+venv
+.idea
+**/__pycache__
+
+# Databases that I import
+twic_databases
+
+# Exported Databases
+chess960.pgn
+filtered_database.pgn
+incorrect_result.pgn
+low_rated_database.pgn
+too_short_games.pgn
