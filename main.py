@@ -1,13 +1,33 @@
+import cs50
 import re
 import settings
 
 game_info_re_dict = {
-    'whiteElo': re.compile(r'\[WhiteElo "(?P<whiteElo>\d+)"\]'),
-    'blackElo': re.compile(r'\[BlackElo "(?P<blackElo>\d+)"\]'),
+    'white_elo': re.compile(r'\[WhiteElo "(?P<white_elo>\d+)"\]'),
+    'black_elo': re.compile(r'\[BlackElo "(?P<black_elo>\d+)"\]'),
     'result': re.compile(r'\[Result "(?P<result>.*)"\]'),
     'ECO': re.compile(r'\[ECO "(?P<ECO>[A-E]\d{2,})"\]'),
     'FEN': re.compile(r'\[FEN "(?P<FEN>.*)"\]'),
 }
+
+
+def get_user_settings():
+    while True:
+        user_min_elo = cs50.get_int('Minimum average ELO in games you want to get? (0-3000)\n')
+        if user_min_elo not in range(3000):
+            user_min_elo = 0
+            print(f'Value not in range (0-3000). Min ELO changed to {user_min_elo}')
+        user_min_moves = cs50.get_int('Minimum number of moves in games you want to get?\n')
+        if user_min_moves not in range(300):
+            user_min_moves = 0
+            print(f'Value not in range (0-300). Min moves changed to {user_min_moves}')
+        user_confirmation = cs50.get_string(f'Minimum Average ELO: {user_min_elo}\n'
+                                            f'Minimum moves: {user_min_moves}\n'
+                                            f'Are you sure? [y/n]\n')
+        if user_confirmation.lower() in ['y', 't', 'yes', 'tak']:
+            settings.min_elo = user_min_elo
+            settings.min_moves = user_min_moves
+            break
 
 
 def import_games(file):
@@ -78,7 +98,7 @@ class Game:
             matches = re.compile(r'\d{1,3}\.').findall(self.notation)
             game_length = int(matches[-1].replace('.', ''))
             self.important_info['moves'] = game_length
-        except:
+        except IndexError:
             game_length = 0
             self.important_info['moves'] = game_length
 
@@ -86,36 +106,36 @@ class Game:
 
     def calculate_ratings(self):
         try:
-            whiteElo = int(self.important_info['whiteElo'])
-            self.important_info['whiteElo'] = whiteElo
-        except:
-            whiteElo = 0
+            white_elo = int(self.important_info['white_elo'])
+            self.important_info['white_elo'] = white_elo
+        except KeyError:
+            white_elo = 0
         try:
-            blackElo = int(self.important_info['blackElo'])
-            self.important_info['blackElo'] = blackElo
-        except:
-            blackElo = 0
+            black_elo = int(self.important_info['black_elo'])
+            self.important_info['black_elo'] = black_elo
+        except KeyError:
+            black_elo = 0
 
-        if whiteElo and blackElo:
-            avgElo = (whiteElo + blackElo) / 2
+        if white_elo and black_elo:
+            avg_elo = (white_elo + black_elo) / 2
         else:
-            avgElo = whiteElo + blackElo
+            avg_elo = white_elo + black_elo
 
-        self.important_info['avgElo'] = avgElo
+        self.important_info['avg_elo'] = avg_elo
 
-        return whiteElo, blackElo, avgElo
+        return white_elo, black_elo, avg_elo
 
     def flag_game_info(self):
-        if self.important_info['moves'] < settings.minMoves:
+        if self.important_info['moves'] < settings.min_moves:
             self.is_too_short = True
-        if self.important_info['avgElo'] < settings.minElo:
+        if self.important_info['avg_elo'] < settings.min_elo:
             self.is_low_rated = True
         if self.important_info['result'] not in ['1-0', '0-1', '1/2-1/2']:
             self.is_result_incorrect = True
         try:
             if self.important_info['FEN']:
                 self.is_fisher = True
-        except:
+        except KeyError:
             pass
 
 
@@ -125,6 +145,7 @@ class Database:
     Creates lists with filtered games.
     Exports lists with games into dedicated files.
     """
+
     def __init__(self, imported_data, database_name):
         self.imported_data = imported_data
         self.database_name = database_name
@@ -172,31 +193,32 @@ class Database:
         with open(settings.filtered_database, 'a') as fd:
             for game in self.filtered_games:
                 fd.write(game.show_game())
-        with open(settings.database_low_rated, 'a') as lrd:
+        with open(settings.database_low_rated, 'a') as dlr:
             for game in self.low_rated_games:
-                lrd.write(game.show_game())
-        with open(settings.database_too_short, 'a') as tsg:
+                dlr.write(game.show_game())
+        with open(settings.database_too_short, 'a') as dts:
             for game in self.too_short_games:
-                tsg.write(game.show_game())
-        with open(settings.database_incorrect_result, 'a') as tsg:
+                dts.write(game.show_game())
+        with open(settings.database_incorrect_result, 'a') as ir:
             for game in self.incorrect_result:
-                tsg.write(game.show_game())
+                ir.write(game.show_game())
         with open(settings.database_chess960, 'a') as chess960:
             for game in self.fisher_games:
                 chess960.write(game.show_game())
 
     def generate_export_message(self):
         filter_export_msg = f'Imported {len(self.games)} games from {self.database_name}.\n'
-        filter_export_msg += f'There were {len(self.filtered_games)} games matching your requirements.\n'
-        filter_export_msg += f'{len(self.too_short_games)} games had less than {settings.minMoves} moves.\n'
-        filter_export_msg += f'{len(self.low_rated_games)} games had less than {settings.minElo} ELO average.\n'
+        filter_export_msg += f'{len(self.filtered_games)} games matching your requirements.\n'
+        filter_export_msg += f'{len(self.too_short_games)} games had less than {settings.min_moves} moves.\n'
+        filter_export_msg += f'{len(self.low_rated_games)} games had less than {settings.min_elo} ELO average.\n'
         filter_export_msg += f'{len(self.incorrect_result)} games had incorrect result.\n'
-        filter_export_msg += f'There were {len(self.fisher_games)} Fisher games (chess 960).\n'
-        filter_export_msg += f'\n-----\n{self.database_name} (hopefully) exported successfully! :)\n-----\n'
+        filter_export_msg += f'{len(self.fisher_games)} Fisher games (chess 960).\n'
+        filter_export_msg += f'-----\n{self.database_name} (hopefully) exported with success! :)\n-----'
 
         return filter_export_msg
 
 
+# Dictionary for collecting data about problems with creating Game()
 place_with_problem = {}
 
 
@@ -204,10 +226,11 @@ def main():
     """
     Main loop there we create new Database.
     """
+    get_user_settings()
     # Database(imported_data=import_games(file=settings.database_to_filter), database_name=settings.database_to_filter)
     # Database(imported_data=import_games(file=f'twic_databases\\twic943.pgn'), database_name='twic943')
     for base in range(920, 1368):
-        Database(imported_data=import_games(file=f'twic_databases\\twic{base}.pgn'), database_name='twic{base}.pgn')
+        Database(imported_data=import_games(file=f'twic_databases\\twic{base}.pgn'), database_name=f'twic{base}.pgn')
 
     # Print problems with creating instances of Game()
     for notation, error_base in place_with_problem.items():
